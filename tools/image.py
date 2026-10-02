@@ -67,15 +67,15 @@ def main():
     build=Path(args.build);out=Path(args.out);out.mkdir(parents=True,exist_ok=True)
     raw=(build/'firmware.bin').read_bytes();sp,reset=validate_raw(raw)
     ram=inspect_elf(build/'firmware.elf',raw);img=pack(raw)
-    name='gc01-pro-ru-v0.3.0-EXPERIMENTAL-app.bin';(out/name).write_bytes(img)
-    report=dict(target='GC01 V0.2 / CH32F103R8T6',status='V0_2_USER_PHOTO_RUNNING__V0_3_NOT_DEVICE_TESTED',
+    name='gc01-pro-ru-v0.3.1-EXPERIMENTAL-app.bin';(out/name).write_bytes(img)
+    report=dict(target='GC01 V0.2 / CH32F103R8T6',status='V0_3_RUNNING_WITH_FLICKER__V0_3_1_NOT_DEVICE_TESTED',
         origin=hex(BASE),application_bytes=len(raw),application_budget=SIZE-4,
         image_bytes=len(img),ram_reserved_end_bytes=ram,ram_total=20480,
         initial_sp=hex(sp),reset_vector=hex(reset),settings_base=hex(STATE),
         history_bytes=END-STATE-0x400,sha256=hashlib.sha256(img).hexdigest(),
         public_binary_release_allowed=False,
         unresolved=['Owner stock firmware and PCB image unavailable in this task',
-                    'v0.3.0 image not yet tested on the owner device',
+                    'v0.3.1 image not yet tested on the owner device',
                     'Bootloader variant and update range not independently verified',
                     'HV, pulse calibration, RAM stack high-water and peripherals untested'])
     (out/'build-report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n')

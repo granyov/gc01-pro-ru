@@ -86,7 +86,7 @@ static void onPowerOnViewEvent(ViewEvent event)
         if (power.onViewState == POWERON_VIEW_FLASHFAILURE)
             drawSplash(getString(STRING_SPLASH_FIRMWARE_CHECKSUM_FAILURE));
         else
-            drawSplash(getString(STRING_APP_NAME) "\n\n" FIRMWARE_VERSION);
+            drawSplash(getString(STRING_APP_NAME) "\n" FIRMWARE_VERSION "\ngranyov.com");
 
         break;
 

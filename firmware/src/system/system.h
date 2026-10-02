@@ -13,9 +13,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define FIRMWARE_AUTHOR "Gissio"
+#define FIRMWARE_AUTHOR "granyov.com"
 #define FIRMWARE_NAME "GC-01 Pro RU"
-#define FIRMWARE_VERSION "0.3.0-exp"
+#define FIRMWARE_VERSION "0.3.1-exp"
 #define SETTINGS_VERSION {'G','C','P','R','U','0','0','1'}
 
 void initGPIO(void);

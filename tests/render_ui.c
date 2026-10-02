@@ -1,6 +1,7 @@
 /* Exact firmware renderer with synthetic fixtures, not a device emulator. MIT. */
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "../firmware/src/ui/draw.h"
 #include "../firmware/src/ui/system.h"
 #include "../firmware/src/ui/measurements.h"
@@ -23,41 +24,70 @@ AlertLevel getAlertLevel(void){return ALERTLEVEL_NONE;}
 void getDeviceDateTime(RTCDateTime *dt){*dt=(RTCDateTime){2026,10,1,14,32,0};}
 void getDateTimeFromTime(uint32_t t,RTCDateTime *dt){*dt=(RTCDateTime){2026,10,1,(t/3600)%24,(t/60)%60,t%60};}
 void showSettingsMenu(void){}
-void showView(OnViewEvent *v){view=v;}
+void showView(OnViewEvent *v){view=v;invalidateDisplayLayout();}
 static mr_color_t pixels[320*240];
+static mr_color_t partialPixels[320*240];
+static unsigned rectangles;
+static mr_rectangle_t lastRectangle;
+static void countRectangle(mr_t *renderer,const mr_rectangle_t *rectangle){
+    rectangles++;lastRectangle=*rectangle;
+    mr_draw_rectangle_framebuffer_color(renderer,rectangle);
+}
 static void save(const char *name){
     char path[200];snprintf(path,sizeof path,"build/%s.ppm",name);FILE *f=fopen(path,"wb");
     if(!f)exit(1);fprintf(f,"P6\n320 240\n255\n");
     for(unsigned i=0;i<320*240;++i){unsigned v=pixels[i];fputc(((v>>11)&31)*255/31,f);fputc(((v>>5)&63)*255/63,f);fputc((v&31)*255/31,f);}fclose(f);
 }
-static void clear(void){setFillColor(COLOR_CONTAINER_BACKGROUND);drawRectangle(&(mr_rectangle_t){0,0,320,240});}
+static void clear(void){invalidateDisplayLayout();setFillColor(COLOR_CONTAINER_BACKGROUND);drawRectangle(&(mr_rectangle_t){0,0,320,240});}
 int main(void){
     mr_init(&mr);mr.display_width=320;mr.display_height=240;mr.buffer=pixels;
-    mr.draw_rectangle_callback=mr_draw_rectangle_framebuffer_color;
+    mr.draw_rectangle_callback=countRectangle;
     mr.draw_string_callback=mr_draw_string_framebuffer_color;
     clear();setFillColor(COLOR_ALARM);drawRectangle(&(mr_rectangle_t){0,225,320,15});
-    drawTitleBar("Измерение");
-    drawConsoleDashboard("0.12","мкЗв/ч",0.18f,"18.4","0.31","2.41 мкЗв","0.56",MEASUREMENTSTYLE_NORMAL);
+    bool full=drawTitleBar("Измерение");
+    drawConsoleDashboard("0.12","мкЗв/ч",0.18f,"18.4","0.31","2.41 мкЗв","0.56",MEASUREMENTSTYLE_NORMAL,full);
     if(pixels[238*320+5]!=getFillColor(COLOR_CONTAINER_BACKGROUND))return 2;
     mr_color_t greenBackground=pixels[238*320+5];
     save("measurement");
+    rectangles=0;
+    full=drawTitleBar("Измерение");
+    drawConsoleDashboard("0.12","мкЗв/ч",0.18f,"18.4","0.31","2.41 мкЗв","0.56",MEASUREMENTSTYLE_NORMAL,full);
+    if(full || rectangles)return 7; // An unchanged sample must not touch the LCD.
+    rectangles=0;
+    full=drawTitleBar("Измерение");
+    drawConsoleDashboard("0.13","мкЗв/ч",0.18f,"18.4","0.31","2.41 мкЗв","0.56",MEASUREMENTSTYLE_NORMAL,full);
+    if(full || rectangles!=1 || lastRectangle.width>40 || lastRectangle.y!=CONTENT_TOP+36)return 8;
+    memcpy(partialPixels,pixels,sizeof pixels);
+    invalidateDisplayLayout();
+    full=drawTitleBar("Измерение");
+    drawConsoleDashboard("0.13","мкЗв/ч",0.18f,"18.4","0.31","2.41 мкЗв","0.56",MEASUREMENTSTYLE_NORMAL,full);
+    if(!full || memcmp(partialPixels,pixels,sizeof pixels))return 9;
     settings.displayTheme=DISPLAY_THEME_BLUE;
-    drawTitleBar("Измерение");
-    drawConsoleDashboard("0.12","мкЗв/ч",0.18f,"18.4","0.31","2.41 мкЗв","0.56",MEASUREMENTSTYLE_NORMAL);
+    full=drawTitleBar("Измерение");
+    drawConsoleDashboard("0.12","мкЗв/ч",0.18f,"18.4","0.31","2.41 мкЗв","0.56",MEASUREMENTSTYLE_NORMAL,full);
     if(pixels[238*320+5]!=getFillColor(COLOR_CONTAINER_BACKGROUND))return 3;
     mr_color_t blueBackground=pixels[238*320+5];
     if(blueBackground==greenBackground)return 5;
     save("measurement-blue");
     settings.displayTheme=DISPLAY_THEME_ORANGE;
-    drawTitleBar("Измерение");
-    drawConsoleDashboard("0.12","мкЗв/ч",0.18f,"18.4","0.31","2.41 мкЗв","0.56",MEASUREMENTSTYLE_NORMAL);
+    full=drawTitleBar("Измерение");
+    drawConsoleDashboard("0.12","мкЗв/ч",0.18f,"18.4","0.31","2.41 мкЗв","0.56",MEASUREMENTSTYLE_NORMAL,full);
     if(pixels[238*320+5]!=getFillColor(COLOR_CONTAINER_BACKGROUND))return 4;
     if(pixels[238*320+5]==greenBackground || pixels[238*320+5]==blueBackground)return 6;
     save("measurement-orange");
     settings.displayTheme=DISPLAY_THEME_GREEN;
-    clear();drawTitleBar("Измерение");
-    drawConsoleDashboard("12345.6","мкЗв/ч",0.02f,"740736","12345.6","1.23 мЗв","12345.6",MEASUREMENTSTYLE_ALARM);
+    clear();full=drawTitleBar("Измерение");
+    drawConsoleDashboard("12345.6","мкЗв/ч",0.02f,"740736","12345.6","1.23 мЗв","12345.6",MEASUREMENTSTYLE_ALARM,full);
     save("high-range");
+    rectangles=0;
+    full=drawTitleBar("Измерение");
+    drawConsoleDashboard("12345.7","мкЗв/ч",0.02f,"740736","12345.6","1.23 мЗв","12345.6",MEASUREMENTSTYLE_ALARM,full);
+    if(full || rectangles!=1 || lastRectangle.width>40)return 10;
+    memcpy(partialPixels,pixels,sizeof pixels);
+    invalidateDisplayLayout();
+    full=drawTitleBar("Измерение");
+    drawConsoleDashboard("12345.7","мкЗв/ч",0.02f,"740736","12345.6","1.23 мЗв","12345.6",MEASUREMENTSTYLE_ALARM,full);
+    if(!full || memcmp(partialPixels,pixels,sizeof pixels))return 11;
     clear();drawTitleBar("Доза");drawMeasurementValue("2.41","мкЗв",0.05f,MEASUREMENTSTYLE_NORMAL);
     drawMeasurementInfo("Время","12:48:32","",MEASUREMENTSTYLE_NORMAL);save("dose");
     clear();drawTitleBar("Тревога");drawMeasurementValue("12.5","мкЗв/ч",0.06f,MEASUREMENTSTYLE_ALARM);

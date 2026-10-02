@@ -13,7 +13,8 @@
 #include <stdbool.h>
 
 void drawPowerOff(bool displayBatteryIcon);
-void drawTitleBar(const char *title);
+void invalidateDisplayLayout(void);
+bool drawTitleBar(const char *title);
 void drawSplash(const char *message);
 void drawNotification(const char *title, const char *message);
 

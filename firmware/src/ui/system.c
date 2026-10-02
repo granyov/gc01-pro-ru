@@ -9,12 +9,23 @@
 
 #include "../measurements/measurements.h"
 #include "../peripherals/rtc.h"
+#include "../system/power.h"
 #include "../system/settings.h"
 #include "../ui/draw.h"
 #include "../ui/system.h"
 
+static bool layoutInvalid = true;
+static uint8_t paintedTheme = UINT8_MAX;
+static uint32_t paintedHeader = UINT32_MAX;
+
+void invalidateDisplayLayout(void)
+{
+    layoutInvalid = true;
+}
+
 void drawPowerOff(bool displayBatteryIcon)
 {
+    invalidateDisplayLayout();
     char buffer[16];
 
     setFillColor(COLOR_CONTAINER_BACKGROUND);
@@ -33,25 +44,48 @@ static const ColorIndex alertLevelColorIndex[] = {
     COLOR_ALARM,
 };
 
-void drawTitleBar(const char *title)
+bool drawTitleBar(const char *title)
 {
     char buffer[16];
+    RTCDateTime dateTime;
+    getDeviceDateTime(&dateTime);
+    uint32_t header = ((dateTime.year >= RTC_YEAR_MIN) ?
+                       dateTime.hour * 60 + dateTime.minute : 2047) |
+                      ((uint32_t)getBatteryLevel() << 11) |
+                      ((uint32_t)isBatteryCharging() << 14) |
+                      ((uint32_t)isUSBPowered() << 15) |
+                      ((uint32_t)getAlertLevel() << 16) |
+                      ((uint32_t)isAlertEnabled() << 18) |
+                      ((uint32_t)isAlertFlashing() << 19) |
+                      ((uint32_t)isAlertPending() << 20) |
+                      ((uint32_t)isLockModeEnabled() << 21) |
+                      ((uint32_t)isSoundIconActive() << 22) |
+                      ((uint32_t)settings.pulseSound << 23) |
+                      ((uint32_t)settings.rtcTimeFormat << 24);
+    bool full = layoutInvalid || (paintedTheme != settings.displayTheme);
+    bool headerChanged = full || (paintedHeader != header);
+    layoutInvalid = false;
+    paintedTheme = settings.displayTheme;
+    paintedHeader = header;
+
+    setFillColor(COLOR_CONTAINER_BACKGROUND);
+    if (!headerChanged)
+        return false;
+
     mr_rectangle_t rectangle = {
         TITLEBAR_WIDTH,
         TITLEBAR_TOP,
         0,
         TITLEBAR_CONTENT_HEIGHT,
     };
-    // The LCD has no full framebuffer. Clear every pixel before redrawing so
-    // shorter values, changed themes and transitions cannot leave old glyphs.
-    setFillColor(COLOR_CONTAINER_BACKGROUND);
-    drawRectangle(&contentRectangle);
+    // Clear the content only when the layout or palette changes. The LCD has
+    // no framebuffer, so clearing it on each sample visibly blanks the screen.
+    if (full)
+        drawRectangle(&contentRectangle);
     setFillColor(COLOR_CONTAINER_GLOBAL);
     drawRectangle(&(mr_rectangle_t){0, 0, DISPLAY_WIDTH, TITLEBAR_HEIGHT});
 
     // Time
-    RTCDateTime dateTime;
-    getDeviceDateTime(&dateTime);
     if (dateTime.year >= RTC_YEAR_MIN)
     {
         strclr(buffer);
@@ -113,6 +147,7 @@ void drawTitleBar(const char *title)
 
     // Set background
     setFillColor(COLOR_CONTAINER_BACKGROUND);
+    return full;
 }
 
 void drawSplash(const char *message)

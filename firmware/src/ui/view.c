@@ -14,6 +14,7 @@
 #include "../system/power.h"
 #include "../system/settings.h"
 #include "../ui/view.h"
+#include "../ui/system.h"
 
 static struct
 {
@@ -130,6 +131,7 @@ void requestViewUpdate(void)
 void showView(OnViewEvent *onViewEvent)
 {
     view.onViewEvent = onViewEvent;
+    invalidateDisplayLayout();
 
     requestViewUpdate();
 }

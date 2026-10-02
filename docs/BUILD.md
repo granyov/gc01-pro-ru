@@ -36,7 +36,7 @@ make image
 
 * `firmware/.pio/build/gc01-pro-ru/firmware.elf` — код, символы и сегменты.
 * `firmware/.pio/build/gc01-pro-ru/firmware.bin` — сырой образ приложения без footer CRC.
-* `build/experimental/gc01-pro-ru-v0.3.0-EXPERIMENTAL-app.bin` — локальная проверочная упаковка.
+* `build/experimental/gc01-pro-ru-v0.3.1-EXPERIMENTAL-app.bin` — локальная проверочная упаковка.
 * `build/experimental/build-report.json` — размер, SHA-256, адреса, причины запрета релиза бинарника.
 
 Проверяются ELF32/ARM/little-endian, начало векторов, stack pointer, Thumb reset/IRQ-векторы,

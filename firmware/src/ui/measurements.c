@@ -135,40 +135,63 @@ static const ColorIndex measurementStyleColorIndex[] = {
 };
 
 #if defined(GC01) && defined(DISPLAY_320X240)
+static struct
+{
+    char value[32], error[16], cpm[32], cps[32], dose[32], maximum[32];
+    MeasurementStyle style;
+    bool compact;
+} consoleCache;
+
 static void drawConsolePair(int16_t x, int16_t y, int16_t width,
-                            const char *label, const char *value)
+                            const char *label, const char *value,
+                            char *previous, bool full)
 {
     setFillColor(COLOR_CONTAINER_BACKGROUND);
     setFont(font_small);
     int16_t labelWidth = getTextWidth(label) + 8;
     if (labelWidth > width)
         labelWidth = width;
-    setStrokeColor(COLOR_ELEMENT_NEUTRAL);
-    mr_rectangle_t labelCell = {x, y, labelWidth, FONT_SMALL_LINE_HEIGHT};
-    drawText(label, &labelCell, &(mr_point_t){0, 0});
-    setStrokeColor(COLOR_INSTRUMENT_ENHANCED_SECONDARY);
-    mr_rectangle_t valueCell = {x + labelWidth, y, width - labelWidth, FONT_SMALL_LINE_HEIGHT};
-    drawRightAlignedText(value, &valueCell, &(mr_point_t){width - labelWidth, 0});
+    if (full)
+    {
+        setStrokeColor(COLOR_ELEMENT_NEUTRAL);
+        mr_rectangle_t labelCell = {x, y, labelWidth, FONT_SMALL_LINE_HEIGHT};
+        drawText(label, &labelCell, &(mr_point_t){0, 0});
+    }
+    if (full || strcmp(value, previous))
+    {
+        setStrokeColor(COLOR_INSTRUMENT_ENHANCED_SECONDARY);
+        mr_rectangle_t valueCell = {x + labelWidth, y, width - labelWidth, FONT_SMALL_LINE_HEIGHT};
+        drawRightAlignedText(value, &valueCell, &(mr_point_t){width - labelWidth, 0});
+        strcpy(previous, value);
+    }
 }
 #endif
 
 void drawConsoleDashboard(const char *value, const char *unit, float confidence,
                           const char *cpm, const char *cps, const char *dose,
-                          const char *maximum, MeasurementStyle style)
+                          const char *maximum, MeasurementStyle style, bool full)
 {
 #if defined(GC01) && defined(DISPLAY_320X240)
     setFillColor(COLOR_CONTAINER_BACKGROUND);
     setFont(font_small);
     setStrokeColor(COLOR_ELEMENT_NEUTRAL);
-    mr_rectangle_t headingCell = {10, CONTENT_TOP + 4, 204, FONT_SMALL_LINE_HEIGHT};
-    drawText("МОЩНОСТЬ ДОЗЫ", &headingCell, &(mr_point_t){0, 0});
+    if (full)
+    {
+        mr_rectangle_t headingCell = {10, CONTENT_TOP + 4, 204, FONT_SMALL_LINE_HEIGHT};
+        drawText("МОЩНОСТЬ ДОЗЫ", &headingCell, &(mr_point_t){0, 0});
+    }
+    char error[16] = "";
     if (confidence > 0.0F)
     {
-        char error[16] = "±";
+        strcat(error, "±");
         strcatFloat(error, confidence * 100.0F, confidence < 0.1F ? 1 : 0);
         strcat(error, "%");
+    }
+    if (full || strcmp(error, consoleCache.error))
+    {
         mr_rectangle_t confidenceCell = {226, CONTENT_TOP + 4, 84, FONT_SMALL_LINE_HEIGHT};
         drawRightAlignedText(error, &confidenceCell, &(mr_point_t){84, 0});
+        strcpy(consoleCache.error, error);
     }
 
     mr_rectangle_t digits = {10, CONTENT_TOP + 36, 218, 72};
@@ -177,22 +200,49 @@ void drawConsoleDashboard(const char *value, const char *unit, float confidence,
     if (compactValue)
         setFont(font_medium);
     setStrokeColor(measurementStyleColorIndex[style]);
-    drawText(value, &digits, &(mr_point_t){0, compactValue ? 16 : -8});
+    bool replaceAll = full || (style != consoleCache.style) ||
+                      (compactValue != consoleCache.compact) ||
+                      (strlen(value) != strlen(consoleCache.value));
+    for (const char *p = value; *p; p++)
+        if ((uint8_t)*p >= 128)
+            replaceAll = true;
+    if (replaceAll)
+        drawText(value, &digits, &(mr_point_t){0, compactValue ? 16 : -8});
+    else
+    {
+        int16_t glyphWidth = getTextWidth("0");
+        for (uint32_t i = 0; value[i]; i++)
+            if (value[i] != consoleCache.value[i])
+            {
+                char glyph[2] = {value[i], '\0'};
+                mr_rectangle_t glyphCell = {digits.x + i * glyphWidth, digits.y,
+                                           glyphWidth, digits.height};
+                drawText(glyph, &glyphCell,
+                         &(mr_point_t){0, compactValue ? 16 : -8});
+            }
+    }
+    strcpy(consoleCache.value, value);
+    consoleCache.style = style;
+    consoleCache.compact = compactValue;
 
     mr_rectangle_t unitCell = {228, CONTENT_TOP + 69, 82, FONT_SMALL_LINE_HEIGHT};
     setFont(font_small);
     setStrokeColor(COLOR_ELEMENT_ACTIVE);
-    drawRightAlignedText(unit, &unitCell, &(mr_point_t){82, 0});
+    if (full)
+        drawRightAlignedText(unit, &unitCell, &(mr_point_t){82, 0});
 
-    setFillColor(COLOR_CONTAINER_GLOBAL_SHADOW);
-    drawRectangle(&(mr_rectangle_t){10, CONTENT_TOP + 111, 300, 1});
-    drawRectangle(&(mr_rectangle_t){10, CONTENT_TOP + 173, 300, 1});
-    drawConsolePair(10, CONTENT_TOP + 117, 140, "CPM", cpm);
-    drawConsolePair(170, CONTENT_TOP + 117, 140, "CPS", cps);
-    drawConsolePair(10, CONTENT_TOP + 146, 300, "ДОЗА", dose);
-    drawConsolePair(10, CONTENT_TOP + 175, 300, "МАКС", maximum);
+    if (full)
+    {
+        setFillColor(COLOR_CONTAINER_GLOBAL_SHADOW);
+        drawRectangle(&(mr_rectangle_t){10, CONTENT_TOP + 111, 300, 1});
+        drawRectangle(&(mr_rectangle_t){10, CONTENT_TOP + 173, 300, 1});
+    }
+    drawConsolePair(10, CONTENT_TOP + 117, 140, "CPM", cpm, consoleCache.cpm, full);
+    drawConsolePair(170, CONTENT_TOP + 117, 140, "CPS", cps, consoleCache.cps, full);
+    drawConsolePair(10, CONTENT_TOP + 146, 300, "ДОЗА", dose, consoleCache.dose, full);
+    drawConsolePair(10, CONTENT_TOP + 175, 300, "МАКС", maximum, consoleCache.maximum, full);
 #else
-    (void)cpm; (void)cps; (void)dose; (void)maximum;
+    (void)cpm; (void)cps; (void)dose; (void)maximum; (void)full;
     drawMeasurementValue(value, unit, confidence, style);
 #endif
 }

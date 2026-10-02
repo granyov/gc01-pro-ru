@@ -119,6 +119,7 @@ static void updateInstantaneousRateAlerts(void)
 
 static void updateInstantaneousRateTab(void)
 {
+    InstantaneousTab previousTab = instantaneousTab;
     if (isTubeFaultAlertTriggered())
         instantaneousTab = INSTANTANEOUS_TAB_ALERT;
     else if (instantaneousTab == INSTANTANEOUS_TAB_ALERT)
@@ -126,6 +127,8 @@ static void updateInstantaneousRateTab(void)
         if (!getTubeFaultAlertLevel())
             instantaneousTab = INSTANTANEOUS_TAB_BAR;
     }
+    if (instantaneousTab != previousTab)
+        invalidateDisplayLayout();
 }
 
 void updateInstantaneousRate(uint32_t periodTick, PulsePeriod *period)
@@ -212,6 +215,7 @@ static void advanceInstantaneousRateTab(void)
     instantaneousTab++;
     if (instantaneousTab >= tabNum)
         instantaneousTab = INSTANTANEOUS_TAB_BAR;
+    invalidateDisplayLayout();
 }
 
 static MeasurementStyle getInstantaneousRateMeasurementStyle(void)
@@ -291,15 +295,20 @@ static void drawInstantaneousRateView(void)
         buildValueString(maximum, doseUnit, instantaneous.maxValue,
                          &pulseUnits[settings.doseUnits].rate,
                          doseUnitsMinMetricPrefix[settings.doseUnits]);
-        drawTitleBar(getString(STRING_INSTANTANEOUS));
+        bool full = drawTitleBar(getString(STRING_INSTANTANEOUS));
         drawConsoleDashboard(value, unit, instantaneous.rate.confidence,
                              cpm, cps, dose, maximum,
-                             getInstantaneousRateMeasurementStyle());
+                             getInstantaneousRateMeasurementStyle(), full);
         return;
     }
 #endif
     drawInstantaneousRateValue();
-
+#if defined(GC01) && defined(DISPLAY_320X240)
+    if (instantaneousTab != INSTANTANEOUS_TAB_ALERT)
+        drawInstantaneousRateTab();
+    else
+        drawMeasurementAlert(getString(STRING_ALERT_FAULT));
+#else
     if (instantaneousTab == INSTANTANEOUS_TAB_BAR)
     {
         float scale = pulseUnits[settings.doseUnits].rate.scale;
@@ -314,6 +323,7 @@ static void drawInstantaneousRateView(void)
         drawInstantaneousRateTab();
     else
         drawMeasurementAlert(getString(STRING_ALERT_FAULT));
+#endif
 }
 
 void onInstantaneousRateViewEvent(ViewEvent event)
