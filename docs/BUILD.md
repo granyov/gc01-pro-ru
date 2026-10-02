@@ -36,7 +36,7 @@ make image
 
 * `firmware/.pio/build/gc01-pro-ru/firmware.elf` — код, символы и сегменты.
 * `firmware/.pio/build/gc01-pro-ru/firmware.bin` — сырой образ приложения без footer CRC.
-* `build/experimental/gc01-pro-ru-v0.1.0-EXPERIMENTAL-app.bin` — локальная проверочная упаковка.
+* `build/experimental/gc01-pro-ru-v0.2.0-EXPERIMENTAL-app.bin` — локальная проверочная упаковка.
 * `build/experimental/build-report.json` — размер, SHA-256, адреса, причины запрета релиза бинарника.
 
 Проверяются ELF32/ARM/little-endian, начало векторов, stack pointer, Thumb reset/IRQ-векторы,
@@ -53,13 +53,16 @@ CI делает чистую пересборку и сравнивает applic
 ```sh
 python -m pip install -r requirements-ui.txt
 make ui
-# Необязательно: пересоздать малый шрифт из включённого TTF
+# Необязательно: пересоздать все три шрифта из включённого TTF
 python tools/build-fonts.py
+pio run -d firmware -t clean
+make image
 ```
 
 `make ui` компилирует настоящий C-рендерер UI и задаёт синтетические значения.
 Это статические сценарии, не полноценная эмуляция MCU. Тестовый framebuffer размещён
 только на компьютере; целевой драйвер использует текстовый буфер.
-Noto Sans: малый 21 px (вся кириллица и используемый набор ASCII), единицы 32 px, большие цифры 115 px;
+Noto Sans: малый 17 px (вся кириллица и используемый набор ASCII), единицы 24 px, большие цифры 80 px;
 bitmap 1 bpp экономит Flash. Заголовки шрифтов уже включены в исходники,
 повторная растеризация разными версиями FreeType может дать другие байты.
+После генерации шрифтов нужна чистая сборка, чтобы новый bitmap точно вошёл в образ.

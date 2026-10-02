@@ -20,7 +20,7 @@
 #if defined(DISPLAY_128X64)
 #define MENU_LINE_HEIGHT 14
 #elif defined(DISPLAY_320X240)
-#define MENU_LINE_HEIGHT 48
+#define MENU_LINE_HEIGHT 34
 #elif defined(DISPLAY_240X320)
 #define MENU_LINE_HEIGHT 45
 #endif

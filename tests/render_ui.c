@@ -36,8 +36,11 @@ int main(void){
     mr.draw_rectangle_callback=mr_draw_rectangle_framebuffer_color;
     mr.draw_string_callback=mr_draw_string_framebuffer_color;
     clear();drawTitleBar("Измерение");
-    drawMeasurementValue("0.12","мкЗв/ч",0.18f,MEASUREMENTSTYLE_NORMAL);
-    drawMeasurementInfo("Скорость","18.4","имп/мин",MEASUREMENTSTYLE_NORMAL);save("measurement");
+    drawConsoleDashboard("0.12","мкЗв/ч",0.18f,"18.4","0.31","2.41 мкЗв","0.56",MEASUREMENTSTYLE_NORMAL);
+    save("measurement");
+    clear();drawTitleBar("Измерение");
+    drawConsoleDashboard("12345.6","мкЗв/ч",0.02f,"740736","12345.6","1.23 мЗв","12345.6",MEASUREMENTSTYLE_ALARM);
+    save("high-range");
     clear();drawTitleBar("Доза");drawMeasurementValue("2.41","мкЗв",0.05f,MEASUREMENTSTYLE_NORMAL);
     drawMeasurementInfo("Время","12:48:32","",MEASUREMENTSTYLE_NORMAL);save("dose");
     clear();drawTitleBar("Тревога");drawMeasurementValue("12.5","мкЗв/ч",0.06f,MEASUREMENTSTYLE_ALARM);

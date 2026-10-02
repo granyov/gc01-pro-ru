@@ -1,21 +1,22 @@
 {
   "target": "GC01 V0.2 / CH32F103R8T6",
-  "status": "BUILD_ONLY_NOT_HARDWARE_VALIDATED",
+  "status": "V0_1_USER_REPORTED_BOOT_OK__V0_2_NOT_DEVICE_TESTED",
   "origin": "0x8004000",
-  "application_bytes": 44720,
+  "application_bytes": 44640,
   "application_budget": 45052,
   "image_bytes": 45056,
   "ram_reserved_end_bytes": 13464,
   "ram_total": 20480,
   "initial_sp": "0x20005000",
-  "reset_vector": "0x8007b07",
+  "reset_vector": "0x8007bbf",
   "settings_base": "0x800f000",
   "history_bytes": 3072,
-  "sha256": "e32260146e946d8f37bc6f7b13b7c5e5ec96a9597f07f5472ab994ce0304372a",
+  "sha256": "bb85f83aff155704d540d0ff27bf74af71137f4b204a8daf064f1a230530d078",
   "public_binary_release_allowed": false,
   "unresolved": [
     "Owner stock firmware and PCB image unavailable in this task",
-    "Bootloader identity / transfer semantics unverified on device",
+    "v0.2.0 image not yet tested on the owner device",
+    "Bootloader variant and update range not independently verified",
     "HV, pulse calibration, RAM stack high-water and peripherals untested"
   ]
 }

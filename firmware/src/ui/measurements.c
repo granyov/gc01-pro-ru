@@ -68,7 +68,11 @@
 #define MEASUREMENT_VALUE_HEIGHT (MEASUREMENT_VALUEUNITCONFIDENCE_OFFSETY + MEASUREMENT_VALUE_TEXTHEIGHT)
 #define MEASUREMENT_VALUE_BOTTOM (MEASUREMENT_VALUE_TOP + MEASUREMENT_VALUE_HEIGHT)
 #define MEASUREMENT_VALUE_OFFSETX (MEASUREMENT_VALUE_WIDTH - MEASUREMENT_PADDING_RIGHT)
+#if defined(DISPLAY_320X240)
+#define MEASUREMENT_VALUE_OFFSETY 0
+#else
 #define MEASUREMENT_VALUE_OFFSETY (MEASUREMENT_VALUEUNITCONFIDENCE_OFFSETY + MEASUREMENT_VALUE_TEXTOFFSETY)
+#endif
 #define MEASUREMENT_VALUE_TEXTHEIGHT ((int32_t)(MEASUREMENT_VALUE_TEXTSCALE * FONT_LARGE_CAP_HEIGHT))
 #define MEASUREMENT_VALUE_TEXTOFFSETY (-(FONT_LARGE_ASCENT - FONT_LARGE_CAP_HEIGHT) + (MEASUREMENT_VALUE_TEXTHEIGHT - FONT_LARGE_CAP_HEIGHT) / 2)
 
@@ -129,6 +133,67 @@ static const ColorIndex measurementStyleColorIndex[] = {
     COLOR_ALARM,
     COLOR_ELEMENT_ACTIVE,
 };
+
+#if defined(GC01) && defined(DISPLAY_320X240)
+static void drawConsoleMetric(int16_t x, int16_t y, const char *label, const char *value)
+{
+    mr_rectangle_t cell = {x, y, 150, 39};
+    setFillColor(COLOR_CONTAINER_GLOBAL);
+    drawRectangle(&cell);
+    setFont(font_small);
+    setStrokeColor(COLOR_ELEMENT_NEUTRAL);
+    mr_rectangle_t labelCell = {x + 7, y, 136, 19};
+    drawText(label, &labelCell, &(mr_point_t){0, 0});
+    setStrokeColor(COLOR_ELEMENT_ACTIVE);
+    mr_rectangle_t valueCell = {x + 7, y + 19, 136, 20};
+    drawRightAlignedText(value, &valueCell, &(mr_point_t){136, 0});
+}
+#endif
+
+void drawConsoleDashboard(const char *value, const char *unit, float confidence,
+                          const char *cpm, const char *cps, const char *dose,
+                          const char *maximum, MeasurementStyle style)
+{
+#if defined(GC01) && defined(DISPLAY_320X240)
+    mr_rectangle_t headline = {8, CONTENT_TOP + 4, 304, 98};
+    setFillColor(COLOR_CONTAINER_GLOBAL);
+    drawRectangle(&headline);
+
+    setFont(font_small);
+    setStrokeColor(COLOR_ELEMENT_NEUTRAL);
+    mr_rectangle_t headingCell = {16, CONTENT_TOP + 4, 207, 24};
+    drawText("МОЩНОСТЬ ДОЗЫ", &headingCell, &(mr_point_t){0, 0});
+    if (confidence > 0.0F)
+    {
+        char error[16] = "±";
+        strcatFloat(error, confidence * 100.0F, confidence < 0.1F ? 1 : 0);
+        strcat(error, "%");
+        mr_rectangle_t confidenceCell = {229, CONTENT_TOP + 4, 76, 24};
+        drawRightAlignedText(error, &confidenceCell, &(mr_point_t){75, 0});
+    }
+
+    mr_rectangle_t digits = {16, CONTENT_TOP + 27, 218, 69};
+    setFont(font_large);
+    bool compactValue = getTextWidth(value) > digits.width;
+    if (compactValue)
+        setFont(font_medium);
+    setStrokeColor(measurementStyleColorIndex[style]);
+    drawText(value, &digits, &(mr_point_t){0, compactValue ? 16 : -13});
+
+    mr_rectangle_t unitCell = {229, CONTENT_TOP + 60, 76, 27};
+    setFont(font_small);
+    setStrokeColor(COLOR_ELEMENT_ACTIVE);
+    drawRightAlignedText(unit, &unitCell, &(mr_point_t){75, 0});
+
+    drawConsoleMetric(8, CONTENT_TOP + 108, "CPM", cpm);
+    drawConsoleMetric(162, CONTENT_TOP + 108, "CPS", cps);
+    drawConsoleMetric(8, CONTENT_TOP + 151, "ДОЗА", dose);
+    drawConsoleMetric(162, CONTENT_TOP + 151, "МАКС", maximum);
+#else
+    (void)cpm; (void)cps; (void)dose; (void)maximum;
+    drawMeasurementValue(value, unit, confidence, style);
+#endif
+}
 
 void drawMeasurementValue(const char *valueString, const char *unitString, float confidence, MeasurementStyle style)
 {

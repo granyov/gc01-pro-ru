@@ -21,6 +21,9 @@ typedef enum
 } MeasurementStyle;
 
 void drawMeasurementValue(const char *valueString, const char *unitString, float confidence, MeasurementStyle style);
+void drawConsoleDashboard(const char *value, const char *unit, float confidence,
+                          const char *cpm, const char *cps, const char *dose,
+                          const char *maximum, MeasurementStyle style);
 void drawMeasurementAlert(const char *alertString);
 void drawMeasurementInfo(const char *keyString, const char *valueString, const char *unitString, MeasurementStyle style);
 void drawMeasurementBar(float value, int32_t minExponent, float warningValue, float alarmValue);

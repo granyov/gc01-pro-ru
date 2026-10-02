@@ -8,6 +8,7 @@
  */
 
 #include "../measurements/instantaneous.h"
+#include "../measurements/cumulative.h"
 #include "../peripherals/tube.h"
 #include "../peripherals/voice.h"
 #include "../system/cmath.h"
@@ -271,6 +272,32 @@ static void drawInstantaneousRateTab(void)
 
 static void drawInstantaneousRateView(void)
 {
+#if defined(GC01) && defined(DISPLAY_320X240)
+    if (instantaneousTab == INSTANTANEOUS_TAB_BAR)
+    {
+        char value[32] = "", unit[32] = "";
+        char cpm[32] = "", cps[32] = "";
+        char dose[32] = "", doseUnit[24] = "";
+        char maximum[24] = "";
+        buildValueString(value, unit, instantaneous.rate.value,
+                         &pulseUnits[settings.doseUnits].rate,
+                         doseUnitsMinMetricPrefix[settings.doseUnits]);
+        strcatFloat(cpm, instantaneous.rate.value * 60.0F, 1);
+        strcatFloat(cps, instantaneous.rate.value, 2);
+        buildValueString(dose, doseUnit, getCumulativeDosePulseCount(),
+                         &pulseUnits[settings.doseUnits].dose,
+                         doseUnitsMinMetricPrefix[settings.doseUnits]);
+        strcat(dose, doseUnit);
+        buildValueString(maximum, doseUnit, instantaneous.maxValue,
+                         &pulseUnits[settings.doseUnits].rate,
+                         doseUnitsMinMetricPrefix[settings.doseUnits]);
+        drawTitleBar(getString(STRING_INSTANTANEOUS));
+        drawConsoleDashboard(value, unit, instantaneous.rate.confidence,
+                             cpm, cps, dose, maximum,
+                             getInstantaneousRateMeasurementStyle());
+        return;
+    }
+#endif
     drawInstantaneousRateValue();
 
     if (instantaneousTab == INSTANTANEOUS_TAB_BAR)
