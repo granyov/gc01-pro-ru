@@ -9,7 +9,7 @@
 #include "../firmware/src/measurements/measurements.h"
 #include "../firmware/src/peripherals/rtc.h"
 extern mr_t mr;
-Settings settings={.displayTheme=DISPLAY_THEME_DUSK,.pulseSound=true};
+Settings settings={.displayTheme=DISPLAY_THEME_GREEN,.pulseSound=true};
 static OnViewEvent *view;
 uint8_t getBatteryLevel(void){return 4;}
 bool isBatteryCharging(void){return false;}
@@ -35,9 +35,26 @@ int main(void){
     mr_init(&mr);mr.display_width=320;mr.display_height=240;mr.buffer=pixels;
     mr.draw_rectangle_callback=mr_draw_rectangle_framebuffer_color;
     mr.draw_string_callback=mr_draw_string_framebuffer_color;
-    clear();drawTitleBar("Измерение");
+    clear();setFillColor(COLOR_ALARM);drawRectangle(&(mr_rectangle_t){0,225,320,15});
+    drawTitleBar("Измерение");
     drawConsoleDashboard("0.12","мкЗв/ч",0.18f,"18.4","0.31","2.41 мкЗв","0.56",MEASUREMENTSTYLE_NORMAL);
+    if(pixels[238*320+5]!=getFillColor(COLOR_CONTAINER_BACKGROUND))return 2;
+    mr_color_t greenBackground=pixels[238*320+5];
     save("measurement");
+    settings.displayTheme=DISPLAY_THEME_BLUE;
+    drawTitleBar("Измерение");
+    drawConsoleDashboard("0.12","мкЗв/ч",0.18f,"18.4","0.31","2.41 мкЗв","0.56",MEASUREMENTSTYLE_NORMAL);
+    if(pixels[238*320+5]!=getFillColor(COLOR_CONTAINER_BACKGROUND))return 3;
+    mr_color_t blueBackground=pixels[238*320+5];
+    if(blueBackground==greenBackground)return 5;
+    save("measurement-blue");
+    settings.displayTheme=DISPLAY_THEME_ORANGE;
+    drawTitleBar("Измерение");
+    drawConsoleDashboard("0.12","мкЗв/ч",0.18f,"18.4","0.31","2.41 мкЗв","0.56",MEASUREMENTSTYLE_NORMAL);
+    if(pixels[238*320+5]!=getFillColor(COLOR_CONTAINER_BACKGROUND))return 4;
+    if(pixels[238*320+5]==greenBackground || pixels[238*320+5]==blueBackground)return 6;
+    save("measurement-orange");
+    settings.displayTheme=DISPLAY_THEME_GREEN;
     clear();drawTitleBar("Измерение");
     drawConsoleDashboard("12345.6","мкЗв/ч",0.02f,"740736","12345.6","1.23 мЗв","12345.6",MEASUREMENTSTYLE_ALARM);
     save("high-range");

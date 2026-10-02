@@ -11,4 +11,4 @@ for f in filter(None,files):
     if p.suffix.lower() in {'.c','.h','.py','.md','.yml','.ini','.json','.txt'}:
         text=(root/p).read_text(errors='replace')
         assert ('-----BEGIN ' + 'PRIVATE KEY-----') not in text, f
-print('publication audit: no tracked binaries, private backups or build directories')
+print('publication audit: no tracked firmware binaries, private backups or build directories')

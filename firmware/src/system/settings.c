@@ -42,7 +42,7 @@ static const Menu settingsMenu;
 Settings settings;
 
 static const Settings defaultSettings = {
-    .displayTheme = DISPLAY_THEME_DUSK,
+    .displayTheme = DISPLAY_THEME_GREEN,
     .pulseSound = true,
     .pulseLED = true,
 

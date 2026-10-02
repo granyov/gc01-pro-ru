@@ -42,7 +42,12 @@ void drawTitleBar(const char *title)
         0,
         TITLEBAR_CONTENT_HEIGHT,
     };
+    // The LCD has no full framebuffer. Clear every pixel before redrawing so
+    // shorter values, changed themes and transitions cannot leave old glyphs.
+    setFillColor(COLOR_CONTAINER_BACKGROUND);
+    drawRectangle(&contentRectangle);
     setFillColor(COLOR_CONTAINER_GLOBAL);
+    drawRectangle(&(mr_rectangle_t){0, 0, DISPLAY_WIDTH, TITLEBAR_HEIGHT});
 
     // Time
     RTCDateTime dateTime;

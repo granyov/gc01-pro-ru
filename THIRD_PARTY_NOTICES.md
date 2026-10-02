@@ -9,7 +9,8 @@ Snapshot and import scope: [UPSTREAM.md](UPSTREAM.md).
 | Rad Pro firmware, compact math structure, tooling | © 2022–2026 Gissio | [MIT](LICENSES/RadPro-MIT.txt) |
 | mcu-renderer, mcu-max, stm32 helper libraries; RadPro Symbols font | Gissio, notices in files | [MIT](LICENSES/RadPro-MIT.txt) |
 | libusb_stm32, bundled source | © Dmitry Filimonchuk, Max Chan and contributors; [upstream](https://github.com/dmitrystu/libusb_stm32) | [Apache-2.0](LICENSES/Apache-2.0.txt) |
-| Noto Sans SemiBold TTF and derived bitmap fonts | © 2022 The Noto Project Authors; [upstream](https://github.com/notofonts/latin-greek-cyrillic) | [SIL OFL 1.1](LICENSES/NotoSans-OFL.txt) |
+| Noto Sans SemiBold TTF used for documentation artwork | © 2022 The Noto Project Authors; [upstream](https://github.com/notofonts/latin-greek-cyrillic) | [SIL OFL 1.1](LICENSES/NotoSans-OFL.txt) |
+| Noto Sans Mono SemiBold TTF and derived bitmap fonts | © 2015–2021 Google LLC; [upstream](https://github.com/notofonts/noto-fonts/tree/ffebf8c1ee449e544955a7e813c54f9b73848eac/hinted/ttf/NotoSansMono) | [SIL OFL 1.1](LICENSES/NotoSansMono-OFL.txt) |
 | gc01.ld linker script (modified) | © 2021 STMicroelectronics | [BSD-3-Clause](LICENSES/BSD-3-Clause.txt) |
 | CMSIS core/device, downloaded by PlatformIO | Arm / STMicroelectronics; pinned package versions | [Apache-2.0](LICENSES/Apache-2.0.txt), package headers |
 | GCC compiler runtime, linked at build | Free Software Foundation | [GPLv3](LICENSES/GPL-3.0.txt) with [GCC Runtime Library Exception 3.1](LICENSES/GCC-Runtime-Exception.txt) |

@@ -135,18 +135,20 @@ static const ColorIndex measurementStyleColorIndex[] = {
 };
 
 #if defined(GC01) && defined(DISPLAY_320X240)
-static void drawConsoleMetric(int16_t x, int16_t y, const char *label, const char *value)
+static void drawConsolePair(int16_t x, int16_t y, int16_t width,
+                            const char *label, const char *value)
 {
-    mr_rectangle_t cell = {x, y, 150, 39};
-    setFillColor(COLOR_CONTAINER_GLOBAL);
-    drawRectangle(&cell);
+    setFillColor(COLOR_CONTAINER_BACKGROUND);
     setFont(font_small);
+    int16_t labelWidth = getTextWidth(label) + 8;
+    if (labelWidth > width)
+        labelWidth = width;
     setStrokeColor(COLOR_ELEMENT_NEUTRAL);
-    mr_rectangle_t labelCell = {x + 7, y, 136, 19};
+    mr_rectangle_t labelCell = {x, y, labelWidth, FONT_SMALL_LINE_HEIGHT};
     drawText(label, &labelCell, &(mr_point_t){0, 0});
-    setStrokeColor(COLOR_ELEMENT_ACTIVE);
-    mr_rectangle_t valueCell = {x + 7, y + 19, 136, 20};
-    drawRightAlignedText(value, &valueCell, &(mr_point_t){136, 0});
+    setStrokeColor(COLOR_INSTRUMENT_ENHANCED_SECONDARY);
+    mr_rectangle_t valueCell = {x + labelWidth, y, width - labelWidth, FONT_SMALL_LINE_HEIGHT};
+    drawRightAlignedText(value, &valueCell, &(mr_point_t){width - labelWidth, 0});
 }
 #endif
 
@@ -155,40 +157,40 @@ void drawConsoleDashboard(const char *value, const char *unit, float confidence,
                           const char *maximum, MeasurementStyle style)
 {
 #if defined(GC01) && defined(DISPLAY_320X240)
-    mr_rectangle_t headline = {8, CONTENT_TOP + 4, 304, 98};
-    setFillColor(COLOR_CONTAINER_GLOBAL);
-    drawRectangle(&headline);
-
+    setFillColor(COLOR_CONTAINER_BACKGROUND);
     setFont(font_small);
     setStrokeColor(COLOR_ELEMENT_NEUTRAL);
-    mr_rectangle_t headingCell = {16, CONTENT_TOP + 4, 207, 24};
+    mr_rectangle_t headingCell = {10, CONTENT_TOP + 4, 204, FONT_SMALL_LINE_HEIGHT};
     drawText("МОЩНОСТЬ ДОЗЫ", &headingCell, &(mr_point_t){0, 0});
     if (confidence > 0.0F)
     {
         char error[16] = "±";
         strcatFloat(error, confidence * 100.0F, confidence < 0.1F ? 1 : 0);
         strcat(error, "%");
-        mr_rectangle_t confidenceCell = {229, CONTENT_TOP + 4, 76, 24};
-        drawRightAlignedText(error, &confidenceCell, &(mr_point_t){75, 0});
+        mr_rectangle_t confidenceCell = {226, CONTENT_TOP + 4, 84, FONT_SMALL_LINE_HEIGHT};
+        drawRightAlignedText(error, &confidenceCell, &(mr_point_t){84, 0});
     }
 
-    mr_rectangle_t digits = {16, CONTENT_TOP + 27, 218, 69};
+    mr_rectangle_t digits = {10, CONTENT_TOP + 36, 218, 72};
     setFont(font_large);
     bool compactValue = getTextWidth(value) > digits.width;
     if (compactValue)
         setFont(font_medium);
     setStrokeColor(measurementStyleColorIndex[style]);
-    drawText(value, &digits, &(mr_point_t){0, compactValue ? 16 : -13});
+    drawText(value, &digits, &(mr_point_t){0, compactValue ? 16 : -8});
 
-    mr_rectangle_t unitCell = {229, CONTENT_TOP + 60, 76, 27};
+    mr_rectangle_t unitCell = {228, CONTENT_TOP + 69, 82, FONT_SMALL_LINE_HEIGHT};
     setFont(font_small);
     setStrokeColor(COLOR_ELEMENT_ACTIVE);
-    drawRightAlignedText(unit, &unitCell, &(mr_point_t){75, 0});
+    drawRightAlignedText(unit, &unitCell, &(mr_point_t){82, 0});
 
-    drawConsoleMetric(8, CONTENT_TOP + 108, "CPM", cpm);
-    drawConsoleMetric(162, CONTENT_TOP + 108, "CPS", cps);
-    drawConsoleMetric(8, CONTENT_TOP + 151, "ДОЗА", dose);
-    drawConsoleMetric(162, CONTENT_TOP + 151, "МАКС", maximum);
+    setFillColor(COLOR_CONTAINER_GLOBAL_SHADOW);
+    drawRectangle(&(mr_rectangle_t){10, CONTENT_TOP + 111, 300, 1});
+    drawRectangle(&(mr_rectangle_t){10, CONTENT_TOP + 173, 300, 1});
+    drawConsolePair(10, CONTENT_TOP + 117, 140, "CPM", cpm);
+    drawConsolePair(170, CONTENT_TOP + 117, 140, "CPS", cps);
+    drawConsolePair(10, CONTENT_TOP + 146, 300, "ДОЗА", dose);
+    drawConsolePair(10, CONTENT_TOP + 175, 300, "МАКС", maximum);
 #else
     (void)cpm; (void)cps; (void)dose; (void)maximum;
     drawMeasurementValue(value, unit, confidence, style);

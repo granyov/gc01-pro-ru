@@ -27,105 +27,27 @@
 // Online RGB565 color picker: https://rgbcolorpicker.com/565
 
 static const mr_color_t displayColors[][3] = {
-    // Element active
-    {mr_get_color(0x0b1420),
-     mr_get_color(0xe6edf3),
-     mr_get_color(0xeaa75e)},
-
-    // Element neutral
-    {mr_get_color(0x535353),
-     mr_get_color(0x9aadc0),
-     mr_get_color(0xc78842)},
-
-    // Container global (title bar background)
-    {mr_get_color(0xfcfcfc),
-     mr_get_color(0x152333),
-     mr_get_color(0x000000)},
-
-    // Container global shadow
-    {mr_get_color(0xc9c9c9),
-     mr_get_color(0x254055),
-     mr_get_color(0x000000)},
-
-    // Container background (content background)
-    {mr_get_color(0xf7f7f7),
-     mr_get_color(0x0b1420),
-     mr_get_color(0x000000)},
-
-    // On flat active (menu item foreground)
-    {mr_get_color(0x0b1420),
-     mr_get_color(0xe6edf3),
-     mr_get_color(0xeaa75e)},
-
-    // Amplified enabled background (selected menu item background)
-    {mr_get_color(0xb2cff9),
-     mr_get_color(0x174b50),
-     mr_get_color(0x10211a)},
-
-    // On amplified active (selected menu item foreground)
-    {mr_get_color(0x1d3c67),
-     mr_get_color(0x8cf1df),
-     mr_get_color(0x58c8a2)},
-
-    // Running (green)
-    {mr_get_color(0x008300),
-     mr_get_color(0x198100),
-     mr_get_color(0x008800)},
-
-    // Warning (orange)
-    {mr_get_color(0xfe9413),
-     mr_get_color(0xffbf69),
-     mr_get_color(0xe67800)},
-
-    // Alarm (red)
-    {mr_get_color(0xe30019),
-     mr_get_color(0xff5b6e),
-     mr_get_color(0xe90f20)},
-
-    // Instrument frame primary
-    {mr_get_color(0xffffff),
-     mr_get_color(0x363636),
-     mr_get_color(0x000000)},
-
-    // Instrument frame tertiary
-    {mr_get_color(0xbebebe),
-     mr_get_color(0x5e5e5e),
-     mr_get_color(0x78532c)},
-
-    // Instrument tick mark label secondary
-    {mr_get_color(0x707070),
-     mr_get_color(0x8c8c8c),
-     mr_get_color(0x9c6a34)},
-
-    // Instrument enhanced secondary
-    {mr_get_color(0x2d548b),
-     mr_get_color(0x5ce0c5),
-     mr_get_color(0x38a784)},
-
-    // Instrument enhanced tertiary
-    {mr_get_color(0x9cc1f5),
-     mr_get_color(0x174b50),
-     mr_get_color(0x10211a)},
-
-    // Instrument enhanced secondary warning
-    {mr_get_color(0xfe9413),
-     mr_get_color(0xffbf69),
-     mr_get_color(0xe67800)},
-
-    // Instrument enhanced tertiary warning
-    {mr_get_color(0xffd4af),
-     mr_get_color(0x7a3d00),
-     mr_get_color(0x351400)},
-
-    // Instrument enhanced secondary alarm
-    {mr_get_color(0xe30019),
-     mr_get_color(0xe1000e),
-     mr_get_color(0xe90f20)},
-
-    // Instrument enhanced tertiary alarm
-    {mr_get_color(0xffbdb3),
-     mr_get_color(0x7A020A),
-     mr_get_color(0x460000)},
+    // Green, blue, orange: all three are dark terminal palettes.
+    {mr_get_color(0xd7f5dd), mr_get_color(0xdbeeff), mr_get_color(0xffe8c3)}, // Active text
+    {mr_get_color(0x85ac91), mr_get_color(0x91abc7), mr_get_color(0xc49e76)}, // Muted text
+    {mr_get_color(0x0c1d14), mr_get_color(0x102033), mr_get_color(0x24170d)}, // Header/panel
+    {mr_get_color(0x244b34), mr_get_color(0x254869), mr_get_color(0x614121)}, // Border
+    {mr_get_color(0x07120c), mr_get_color(0x07121f), mr_get_color(0x160d07)}, // Background
+    {mr_get_color(0xd7f5dd), mr_get_color(0xdbeeff), mr_get_color(0xffe8c3)}, // Menu text
+    {mr_get_color(0x173c27), mr_get_color(0x193d5a), mr_get_color(0x54351b)}, // Selection
+    {mr_get_color(0x77eda2), mr_get_color(0x71cfff), mr_get_color(0xffbc69)}, // Selection text
+    {mr_get_color(0x77eda2), mr_get_color(0x71cfff), mr_get_color(0xffbc69)}, // Running
+    {mr_get_color(0xffca62), mr_get_color(0xffca62), mr_get_color(0xffdc7a)}, // Warning
+    {mr_get_color(0xff6374), mr_get_color(0xff6374), mr_get_color(0xff6374)}, // Alarm
+    {mr_get_color(0x244b34), mr_get_color(0x254869), mr_get_color(0x614121)}, // Frame primary
+    {mr_get_color(0x173c27), mr_get_color(0x193d5a), mr_get_color(0x54351b)}, // Frame tertiary
+    {mr_get_color(0x85ac91), mr_get_color(0x91abc7), mr_get_color(0xc49e76)}, // Tick label
+    {mr_get_color(0x77eda2), mr_get_color(0x71cfff), mr_get_color(0xffbc69)}, // Data accent
+    {mr_get_color(0x173c27), mr_get_color(0x193d5a), mr_get_color(0x54351b)}, // Data accent bg
+    {mr_get_color(0xffca62), mr_get_color(0xffca62), mr_get_color(0xffdc7a)}, // Warning data
+    {mr_get_color(0x4d3317), mr_get_color(0x4d3317), mr_get_color(0x593d1a)}, // Warning bg
+    {mr_get_color(0xff6374), mr_get_color(0xff6374), mr_get_color(0xff6374)}, // Alarm data
+    {mr_get_color(0x4c1822), mr_get_color(0x4c1822), mr_get_color(0x4c1822)}, // Alarm bg
 
 #if defined(GAME)
     // Selected enabled background [game square selected]

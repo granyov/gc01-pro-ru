@@ -221,9 +221,9 @@
 #define STRING_SLEEP "Спящий режим"
 
 // Display theme menu items
-#define STRING_THEME_DAY "День"
-#define STRING_THEME_DUSK "Сумерки"
-#define STRING_THEME_NIGHT "Ночь"
+#define STRING_THEME_DAY "Зелёная"
+#define STRING_THEME_DUSK "Синяя"
+#define STRING_THEME_NIGHT "Оранжевая"
 
 // Display contrast menu items prefix (followed by a number from 1 to 8)
 #define STRING_CONTRAST_LEVEL "Уровень"

@@ -36,7 +36,7 @@ make image
 
 * `firmware/.pio/build/gc01-pro-ru/firmware.elf` — код, символы и сегменты.
 * `firmware/.pio/build/gc01-pro-ru/firmware.bin` — сырой образ приложения без footer CRC.
-* `build/experimental/gc01-pro-ru-v0.2.0-EXPERIMENTAL-app.bin` — локальная проверочная упаковка.
+* `build/experimental/gc01-pro-ru-v0.3.0-EXPERIMENTAL-app.bin` — локальная проверочная упаковка.
 * `build/experimental/build-report.json` — размер, SHA-256, адреса, причины запрета релиза бинарника.
 
 Проверяются ELF32/ARM/little-endian, начало векторов, stack pointer, Thumb reset/IRQ-векторы,
@@ -62,7 +62,7 @@ make image
 `make ui` компилирует настоящий C-рендерер UI и задаёт синтетические значения.
 Это статические сценарии, не полноценная эмуляция MCU. Тестовый framebuffer размещён
 только на компьютере; целевой драйвер использует текстовый буфер.
-Noto Sans: малый 17 px (вся кириллица и используемый набор ASCII), единицы 24 px, большие цифры 80 px;
+Noto Sans Mono SemiBold: малый 19 px (вся кириллица и используемый набор ASCII), единицы 25 px, большие цифры 64 px;
 bitmap 1 bpp экономит Flash. Заголовки шрифтов уже включены в исходники,
 повторная растеризация разными версиями FreeType может дать другие байты.
 После генерации шрифтов нужна чистая сборка, чтобы новый bitmap точно вошёл в образ.
