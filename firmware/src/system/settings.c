@@ -1,0 +1,298 @@
+/*
+ * Rad Pro
+ * Settings
+ *
+ * (C) 2022-2026 Gissio
+ *
+ * License: MIT
+ */
+
+#include <limits.h>
+#include <stddef.h>
+#include "integrity.h"
+#include "session.h"
+#include "../stm32/device.h"
+#include "../peripherals/keyboard.h"
+#include <stdbool.h>
+#if defined(SIMULATOR)
+#include <time.h>
+#endif
+
+#include "../extras/game.h"
+#include "../extras/rng.h"
+#include "../measurements/cumulative.h"
+#include "../measurements/datalog.h"
+#include "../measurements/measurements.h"
+#include "../peripherals/display.h"
+#include "../peripherals/flash.h"
+#include "../peripherals/rtc.h"
+#include "../peripherals/sound.h"
+#include "../peripherals/tube.h"
+#include "../system/cmath.h"
+#include "../system/power.h"
+#include "../system/settings.h"
+#include "../system/statistics.h"
+#include "../system/system.h"
+#include "../ui/menu.h"
+
+static const Menu settingsMenu;
+
+// Settings
+
+Settings settings;
+
+static const Settings defaultSettings = {
+    .displayTheme = DISPLAY_THEME_DUSK,
+    .pulseSound = true,
+    .pulseLED = true,
+
+    .secondaryDoseUnits = DOSE_UNITS_CPM,
+
+    .rateWarning = RATE_1_USVH,
+    .rateAlarm = RATE_10_USVH,
+    .alertSound = true,
+    .alertVoice = true,
+    .alertVibration = true,
+    .alertPulseLED = true,
+    .alertDisplayFlash = true,
+
+    .tubeType = TUBE_TYPE_DEFAULT,
+
+    .loggingMode = DATALOG_LOGGINGMODE_10_MINUTES,
+
+    .displayContrast = DISPLAY_CONTRAST_DEFAULT,
+#if defined(SIMULATOR)
+    .displayBrightness = DISPLAY_BRIGHTNESS_VERYHIGH,
+#else
+    .displayBrightness = DISPLAY_BRIGHTNESS_HIGH,
+#endif
+    .displaySleep = DISPLAY_SLEEP_30_SECONDS,
+
+#if defined(BUZZER_VOLUME)
+    .soundPulseVolume = SOUND_PULSEVOLUME_VERYHIGH,
+    .soundAlertVolume = SOUND_ALERTVOLUME_VERYHIGH,
+#endif
+#if defined(VOICE)
+    .soundAlertStyle = SOUND_ALERTSTYLE_LONG,
+    .soundAlertVolume = SOUND_ALERTVOLUME_VERYHIGH,
+    .soundVoiceVolume = SOUND_VOICEVOLUME_VERYHIGH,
+#endif
+
+    .rtcTimeZone = RTC_TIMEZONE_P0000,
+};
+
+// State
+
+typedef
+#if defined(__GNUC__)
+    __attribute__((aligned(8)))
+#elif defined(_MSC_VER)
+    __declspec(align(8))
+#endif
+    struct
+{
+    Dose tube;
+    Dose dose;
+    Settings settings;
+    uint32_t crc;
+} State;
+
+static uint32_t stateOffset;
+
+#define STATES_PAGE_SIZE FLASH_PAGE_SIZE
+#define STATES_PAGE_LASTSTATE_OFFSET ((STATES_PAGE_ID_OFFSET / sizeof(State)) * sizeof(State))
+#define STATES_PAGE_ID_OFFSET (STATES_PAGE_SIZE - STATES_PAGE_ID_SIZE)
+#define STATES_PAGE_ID_SIZE 8
+
+static const uint8_t statesPageId[STATES_PAGE_ID_SIZE] = SETTINGS_VERSION;
+
+static bool validateStatePage(void)
+{
+    const uint8_t *page = readFlash(STATES_BASE + STATES_PAGE_ID_OFFSET, STATES_PAGE_ID_SIZE);
+
+    return memcmp(page, statesPageId, STATES_PAGE_ID_SIZE) == 0;
+}
+
+static void eraseStatePage(void)
+{
+    eraseFlash(STATES_BASE);
+    writeFlash(STATES_BASE + STATES_PAGE_ID_OFFSET, statesPageId, STATES_PAGE_ID_SIZE);
+}
+
+static bool validateState(const State *state)
+{
+    const Settings *s = &state->settings;
+
+    return (stateCRC(state, offsetof(State, crc)) == state->crc &&
+            !s->empty &&
+            (s->source < SOURCE_NUM) &&
+            (s->instantaneousAveraging < INSTANTANEOUSAVERAGING_NUM) &&
+            (s->averaging < AVERAGING_NUM) &&
+            (s->tubeType < TUBE_TYPE_NUM) &&
+            (s->tubeSensitivity < TUBE_SENSITIVITY_NUM) &&
+            (s->tubeDeadTimeCompensation < TUBE_DEADTIMECOMPENSATION_NUM) &&
+#if defined(TUBE_HV_PWM)
+            (s->tubeHVProfile < TUBE_HVPROFILE_NUM) &&
+            (s->tubeHVFrequency < TUBE_HVFREQUENCY_NUM) &&
+            (s->tubeHVDutyCycle < TUBE_HVDUTYCYCLE_NUM) &&
+#endif
+            (s->loggingMode < DATALOG_LOGGINGMODE_NUM) &&
+#if defined(DISPLAY_COLOR)
+            (s->displayTheme < DISPLAY_THEME_NUM) &&
+#endif
+            (s->displaySleep < DISPLAY_SLEEP_NUM) &&
+            (s->soundPulseStyle < SOUND_PULSETYPE_NUM) &&
+            (s->rtcTimeZone < RTC_TIMEZONE_NUM) &&
+#if defined(BATTERY_REMOVABLE)
+            (s->powerBatteryType < BATTERYTYPE_NUM) &&
+#endif
+            true);
+}
+
+static const State *loadLatestState(void)
+{
+    const State *lastState = NULL;
+    stateOffset = STATES_PAGE_LASTSTATE_OFFSET;
+
+    if (validateStatePage())
+    {
+        // Find last state
+        const uint8_t *page = readFlash(STATES_BASE, STATES_SIZE);
+
+        for (uint32_t offset = 0; offset < STATES_PAGE_LASTSTATE_OFFSET; offset += sizeof(State))
+        {
+            const State *state = (const State *)(page + offset);
+            if (validateState(state))
+            {
+                lastState = state;
+
+                stateOffset = offset + sizeof(State);
+            }
+        }
+    }
+
+    return lastState;
+}
+
+static void appendState(State *state)
+{
+    if (stateOffset >= STATES_PAGE_LASTSTATE_OFFSET)
+    {
+        eraseStatePage();
+
+        stateOffset = 0;
+    }
+
+    if (writeFlash(STATES_BASE + stateOffset, (uint8_t *)state, sizeof(State)))
+        stateOffset += sizeof(State);
+    else
+        stateOffset = STATES_PAGE_LASTSTATE_OFFSET;
+}
+
+void initSettings(void)
+{
+    // Default settings
+    settings = defaultSettings;
+
+#if defined(SIMULATOR)
+    time_t unixTime = time(NULL);
+    struct tm *localTM = gmtime(&unixTime);
+    time_t localTime = mktime(localTM);
+    settings.rtcTimeZone = 12 + (unixTime - localTime) / 3600;
+#endif
+
+    // UP + DOWN at application startup bypasses stored settings.
+    initKeyboardHardware();
+    bool safeBoot = !gpio_get(KEY_UP_PORT, KEY_UP_PIN) &&
+                    !gpio_get(KEY_DOWN_PORT, KEY_DOWN_PIN);
+    const State *state = loadLatestState();
+    if (state)
+    {
+        setCumulativeDoseTime(state->dose.time);
+        setCumulativeDosePulseCount(state->dose.pulseCount);
+        setTubeTime(state->tube.time);
+        setTubePulseCount(state->tube.pulseCount);
+
+        if (!safeBoot) settings = state->settings;
+    }
+    if (safeBoot) {
+        settings.loggingMode = DATALOG_LOGGINGMODE_OFF;
+        settings.displaySleep = DISPLAY_SLEEP_ALWAYS_ON;
+    }
+}
+
+void resetSettings(void)
+{
+    selectMenuItem(&settingsMenu, 0);
+}
+
+void saveSettings(void)
+{
+    // Save state
+    State state = {0};
+
+    state.dose.time = getCumulativeDoseTime();
+    state.dose.pulseCount = getCumulativeDosePulseCount();
+    state.tube.time = getTubeTime();
+    state.tube.pulseCount = getTubePulseCount();
+
+    state.settings = settings;
+
+    state.crc = stateCRC(&state, offsetof(State, crc));
+    appendState(&state);
+}
+
+// Settings menu
+
+static ViewOption settingsMenuOptions[] = {
+    {STRING_PULSES, showPulsesMenu},
+    {STRING_ALERTS, showAlertsMenu},
+    {STRING_MEASUREMENTS, showMeasurementsMenu},
+    {STRING_GEIGER_TUBE, showTubeMenu},
+    {STRING_DATALOG, showDatalogMenu},
+    {STRING_DISPLAY, showDisplayMenu},
+#if defined(SOUND)
+    {STRING_SOUND, showSoundMenu},
+#endif
+    {STRING_DATE_AND_TIME, showRTCMenu},
+#if defined(POWER_MENU)
+    {STRING_POWER, showPowerMenu},
+#endif
+#if defined(GAME)
+    {STRING_GAME, showGameMenu},
+#endif
+    {"Сеанс", showSessionView},
+    {"Журнал", showEventLog},
+    {STRING_STATISTICS, showStatisticsView},
+};
+
+#define SETTINGS_MENU_COUNT (sizeof(settingsMenuOptions) / sizeof(ViewOption))
+#define DATA_MODE_INDEX (SETTINGS_MENU_COUNT - 2)
+
+static const char *onSettingsMenuGetOption(menu_size_t index, MenuStyle *menuStyle)
+{
+    *menuStyle = MENUSTYLE_SUBMENU;
+
+    return getString(settingsMenuOptions[index].title);
+}
+
+static void onSettingsMenuSelect(menu_size_t index)
+{
+    settingsMenuOptions[index].showView();
+}
+
+static MenuState settingsMenuState;
+
+static const Menu settingsMenu = {
+    STRING_SETTINGS,
+    &settingsMenuState,
+    ARRAY_SIZE(settingsMenuOptions),
+    onSettingsMenuGetOption,
+    onSettingsMenuSelect,
+    setMeasurementView,
+};
+
+void showSettingsMenu(void)
+{
+    showMenu(&settingsMenu);
+}

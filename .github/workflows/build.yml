@@ -1,0 +1,40 @@
+name: Firmware and checks
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned build tools
+        run: python -m pip install -r requirements.txt -r requirements-ui.txt
+      - name: Test logic and image rejection paths
+        run: make test
+      - name: First ARM build
+        run: |
+          make image
+          cp build/experimental/*-app.bin build/first.bin
+      - name: Clean rebuild and compare application bytes
+        run: |
+          pio run -d firmware -t clean
+          make image
+          cmp build/first.bin build/experimental/*-app.bin
+      - name: Render firmware UI fixtures
+        run: make ui
+      - name: Publication audit
+        run: python tools/audit.py
+      - name: Retain report only (no unvalidated firmware)
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-report-and-ui
+          path: |
+            build/experimental/build-report.json
+            docs/assets/*.png
+          if-no-files-found: error

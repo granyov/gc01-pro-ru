@@ -1,0 +1,10 @@
+.pio/
+.venv/
+__pycache__/
+*.pyc
+build/
+private/
+*.bin
+*.elf
+*.map
+.DS_Store

@@ -1,0 +1,3 @@
+Pillow==11.3.0
+freetype-py==2.5.1
+bdflib==2.1.0
